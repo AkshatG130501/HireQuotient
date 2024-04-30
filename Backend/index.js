@@ -1,8 +1,10 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 import connectToMongoDB from './db/connectToMongoDB.js';
 import authRoutes from './routes/authRoutes.routes.js';
-import cookieParser from 'cookie-parser';
+import userRoutes from './routes/userRoutes.routes.js';
+
 
 
 /* Configurations */
@@ -14,6 +16,7 @@ dotenv.config();
 
 /* Routes */
 app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
