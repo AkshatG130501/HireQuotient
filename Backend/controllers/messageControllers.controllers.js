@@ -13,7 +13,7 @@ export const getAllMessages = async (req, res) => {
     }
 }
 
-const sendMessage = async (req, res) => {
+export const sendMessage = async (req, res) => {
     const {text, chatId} = req.body;
 
     if(!text || !chatId){
@@ -33,7 +33,7 @@ const sendMessage = async (req, res) => {
         message = await Message.populate("chat").execPopulate();
         message = await User.populate(message, {path: "chat.users", select: "name email"});
 
-        await Chat.findByIdAndUpdate(chatId, {lastMessage: message._id});
+        await Chat.findByIdAndUpdate(req.body.chatId, {lastMessage: message});
 
         res.status(200).json(message);
     } catch (error) {
