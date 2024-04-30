@@ -19,7 +19,7 @@ export const register = async (req,res) => {
             httpOnly: true
         };
 
-        res.status(200).cookie("token", token, options).json({ creator, token });
+        res.status(201).cookie("token", token, options).json({ user, token });
 
         
     } catch (error) {
@@ -50,7 +50,7 @@ export const login = async (req,res) => {
             httpOnly: true
         };
 
-        res.status(200).cookie("token", token, options).json({ creator, token });
+        res.status(200).cookie("token", token, options).json({ user, token });
 
     } catch (error) {
         res.status(500).json({message: "Internal server error"});
