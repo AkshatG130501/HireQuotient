@@ -75,7 +75,8 @@ socket.on('sendMessage', async(data) => {
     // }
     console.log(recipientStatus);
 
-    if(recipientStatus==true){
+    if(recipientStatus=='available'){
+      console.log("here");
       if (recipientSocketId) {
         io.to(recipientSocketId).emit('receiveMessage', { senderId, message });
       } 
