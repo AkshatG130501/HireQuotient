@@ -6,16 +6,12 @@ import authRoutes from './routes/authRoutes.routes.js';
 import userRoutes from './routes/userRoutes.routes.js';
 import chatRoutes from './routes/chatRoutes.routes.js';
 import messageRoutes from './routes/messageRoutes.routes.js';
-import http from "http";
-import {Server} from "socket.io";
-import Chat from './models/chat.models.js';
-import Message from './models/message.models.js';
 import {app, server} from './socket/socket.js';
+
 
 /* Configurations */
 app.use(express.json());
 app.use(cookieParser());
-
 dotenv.config();
 
 /* Routes */
@@ -29,19 +25,6 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT;
-
-// const server = http.createServer(app);
-// export const io = new Server(server, {
-//     cors: {
-//         origin: 'http://localhost:3000',
-//     }
-// });
-
-
-
-export const getRecipientSocketId = (recipientId) => {
-	return userSocketMap[recipientId];
-};
 
 
 server.listen(PORT, () => {
