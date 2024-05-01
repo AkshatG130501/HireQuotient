@@ -1,12 +1,22 @@
-import Message from '../models/messageModel.models.js';
-import Chat from '../models/chatModel.models.js';
-import User from '../models/userModel.models.js';
+import Message from '../models/message.models.js';
+import Chat from '../models/chat.models.js';
+import User from '../models/user.models.js';
+import { io, getRecipientSocketId } from "../index.js";
 
 export const getAllMessages = async (req, res) => {
+    const {otherUserId} = req.params;
+    const userId = req.user._id;
     try {
-        const messages = await Message.find({chat: req.params.chatId})
-        .populate("sender", "name email")
-        .populate("chat");
+        const chat = await Chat.findOne({
+            users: { $all: [userId, otherUserId] },
+        })
+
+        if(!chat){
+            return res.status(404).json({message: "Chat not found"});
+        }
+
+        const messages = await Message.find({chatId: chat._id}).sort({createdAt: 1});
+
         res.status(200).json(messages);
     } catch (error) {
         res.status(500).json({message: "Cannot get all messages"});
@@ -14,28 +24,45 @@ export const getAllMessages = async (req, res) => {
 }
 
 export const sendMessage = async (req, res) => {
-    const {text, chatId} = req.body;
-
-    if(!text || !chatId){
-        return res.status(400).json({message: "All fields are required"});
-    }
-
-    let newMessage = {
-        text: text,
-        sender: req.user._id,
-        chat: chatId
-    }
-
     try {
-        let message = await Message.create(newMessage);
+        const {recieverId, message} = req.body;
+        const senderId = req.user._id;
 
-        message = await Message.populate("sender", "name email").execPopulate();
-        message = await Message.populate("chat").execPopulate();
-        message = await User.populate(message, {path: "chat.users", select: "name email"});
+        let chat = await Chat.findOne({
+            users: { $all: [senderId, recieverId] },
+        })
 
-        await Chat.findByIdAndUpdate(req.body.chatId, {lastMessage: message});
+        if(!chat){
+            chat = new Chat({
+                users: [senderId, recieverId],
+                lastMessage: {
+                    text: message,
+                    sender: senderId,
+                }
+            });
+            await chat.save();
+        }
 
-        res.status(200).json(message);
+        const newMessage = new Message({
+            sender: senderId,
+            text: message,
+            chatId: chat._id,
+        });
+
+        await newMessage.save();
+        await chat.updateOne({lastMessage:{
+            text: message,
+            sender: senderId,
+        } 
+    });
+
+    const recieverSocketId = getRecipientSocketId(recieverId);
+
+    if(recieverSocketId){
+        io.to(recieverSocketId).emit("newMessage", newMessage);
+    }
+
+    res.status(201).json(newMessage);
     } catch (error) {
         res.status(500).json({message: "Cannot send message"});
     }

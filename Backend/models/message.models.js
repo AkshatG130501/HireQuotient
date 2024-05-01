@@ -3,19 +3,15 @@ import mongoose from "mongoose";
 const messageSchema = new mongoose.Schema({
     sender:{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        ref: "User"
     },
     text:{
         type: String,
         required: true,
     },
-    chat: {
+    chatId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Chat'
-    },
-    reciever: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        ref: "Chat"
     },
 });
 

@@ -1,6 +1,6 @@
-import User from "../models/userModel.js";
+import User from "../models/user.models.js";
 
-export const getAllUsers = async (req,res) => {
+export const searchUsers = async (req,res) => {
     try {
         const keyword = req.query.search
         ? {
