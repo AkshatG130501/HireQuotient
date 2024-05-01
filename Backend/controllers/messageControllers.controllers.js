@@ -1,8 +1,6 @@
 import Message from '../models/message.models.js';
 import Chat from '../models/chat.models.js';
-import User from '../models/user.models.js';
-import {  getRecipientSocketId } from "../index.js";
-import { io } from "../socket/socket.js";
+import { io, getRecipientSocketId } from "../socket/socket.js";
 
 export const getAllMessages = async (req, res) => {
     const {otherUserId} = req.params;
