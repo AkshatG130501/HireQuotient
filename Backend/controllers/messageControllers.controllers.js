@@ -1,6 +1,7 @@
 import Message from '../models/message.models.js';
 import Chat from '../models/chat.models.js';
 
+/* Create a new message controller */
 export const getAllMessages = async (req, res) => {
     const {otherUserId} = req.params;
     const userId = req.user._id;

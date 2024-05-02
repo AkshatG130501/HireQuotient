@@ -1,5 +1,6 @@
 import User from '../models/user.models.js';
 
+/* Register Controller */
 export const register = async (req,res) => {
     try {
         const {name,email,password} = req.body;
@@ -27,6 +28,8 @@ export const register = async (req,res) => {
     }
 };
 
+
+/* Login Controller */
 export const login = async (req,res) => {
     try {
         const {email,password} = req.body;
@@ -57,6 +60,8 @@ export const login = async (req,res) => {
     }
 };
 
+
+/* Logout Controller */
 export const logout = async (req,res) => {
     try {
         res

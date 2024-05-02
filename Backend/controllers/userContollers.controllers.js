@@ -1,5 +1,6 @@
 import User from "../models/user.models.js";
 
+/* Get all users controller */
 export const searchUsers = async (req,res) => {
     try {
         const keyword = req.query.search

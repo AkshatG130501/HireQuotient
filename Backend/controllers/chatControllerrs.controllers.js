@@ -1,5 +1,6 @@
 import Chat from "../models/chat.models.js";
 
+/* Create a new chat controller */
 export const getAllChats = async (req,res) => {
     const userId = req.user._id;
 
