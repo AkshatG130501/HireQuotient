@@ -1,6 +1,5 @@
 import Message from '../models/message.models.js';
 import Chat from '../models/chat.models.js';
-import { io, getRecipientSocketId } from "../socket/socket.js";
 
 export const getAllMessages = async (req, res) => {
     const {otherUserId} = req.params;
@@ -22,47 +21,4 @@ export const getAllMessages = async (req, res) => {
     }
 }
 
-export const sendMessage = async (req, res) => {
-    try {
-        const {recieverId, message} = req.body;
-        const senderId = req.user._id;
 
-        let chat = await Chat.findOne({
-            users: { $all: [senderId, recieverId] },
-        })
-
-        if(!chat){
-            chat = new Chat({
-                users: [senderId, recieverId],
-                lastMessage: {
-                    text: message,
-                    sender: senderId,
-                }
-            });
-            await chat.save();
-        }
-
-        const newMessage = new Message({
-            sender: senderId,
-            text: message,
-            chatId: chat._id,
-        });
-
-        await newMessage.save();
-        await chat.updateOne({lastMessage:{
-            text: message,
-            sender: senderId,
-        } 
-    });
-
-    const recieverSocketId = getRecipientSocketId(recieverId);
-
-    if(recieverSocketId){
-        io.to(recieverSocketId).emit("newMessage", newMessage);
-    }
-
-    res.status(201).json(newMessage);
-    } catch (error) {
-        res.status(500).json({message: "Cannot send message"});
-    }
-}
