@@ -1,6 +1,11 @@
 import express from "express";
 import { Server } from "socket.io";
 import http from "http";
+import Chat from "../models/chat.models.js";
+import Message from "../models/message.models.js";
+import User from "../models/user.models.js";
+import OpenAI from "openai";
+
 
 /* Set up the Express application, create a server, and initialize Socket.IO with CORS configuration */
 export const app = express();
@@ -13,6 +18,7 @@ export const io = new Server(server, {
     }
 });
 
+const openai = new OpenAI({apiKey:`${process.env.OPENAI_API_KEY}`});
 
 /* LLM Response function */
 async function getLLMResponse(prompt) {
@@ -23,6 +29,23 @@ async function getLLMResponse(prompt) {
   });
 };
 
+/* GPT-4 Response function */
+async function getGptResponse(prompt){
+    const stream = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [{ role: "user", content: `${prompt}` }],
+        stream: true,
+    });
+
+    let response = ""; // Accumulate response chunks
+
+    for await (const chunk of stream) {
+        response += chunk.choices[0]?.delta?.content || "";
+    }
+    
+    return response;
+}
+
 /* Creating maps to store userId, socketId and userStatus */
 const userSocketMap = {};
 const userStatusMap = {};
@@ -31,6 +54,8 @@ const userStatusMap = {};
 /* When a user connects to the server */
 io.on("connection", (socket) => {
 	console.log("user connected", socket.id);
+
+    
 
     /* Get the userId and userStatus: Available/Busy */
 	const userId = socket.handshake.query.userId;
@@ -44,22 +69,48 @@ io.on("connection", (socket) => {
     socket.on('sendMessage', async(data) => {
         const { senderId, receiverId, message } = data;
         
-        const recipientSocketId = userSocketMap['"' + receiverId + '"'];
-        const recipientStatus = userStatusMap[userSocketMap['"' + receiverId + '"']];
+        const recieverSocketId = userSocketMap['"' + receiverId + '"'];
+        const recieverStatus = userStatusMap[userSocketMap['"' + receiverId + '"']];
         console.log(userSocketMap['"' + receiverId + '"']);
-        console.log(recipientStatus);
+        console.log(recieverStatus);
 
-        if(recipientStatus=='available'){
+        let chat = await Chat.findOne({
+            users: { $all: [senderId, receiverId] },
+        })
 
-        if (recipientSocketId) {
+        if(!chat){
+            chat = new Chat({
+                users: [senderId, receiverId],
+                lastMessage: {
+                    text: message,
+                    sender: senderId,
+                }
+            });
+            await chat.save();
+        }
 
-            io.to(recipientSocketId).emit('receiveMessage', { senderId, message });
+        if(recieverStatus=='available'){
+
+        if (recieverSocketId) {
+            const newMessage = new Message({
+                sender: senderId,
+                text: message,
+                chatId: chat._id,
+            });
+    
+            await newMessage.save();
+            await chat.updateOne({lastMessage:{
+                text: message,
+                sender: senderId,
+            }});
+
+            io.to(recieverSocketId).emit('receiveMessage', { senderId, message });
 
         }
 
         }else{
             const senderSocketId = userSocketMap['"' + senderId + '"'];
-            const response = await getLLMResponse();
+            const response = await getGptResponse(message);
             io.to(senderSocketId).emit("busyRecipient", {response});
         }
 
@@ -69,6 +120,5 @@ io.on("connection", (socket) => {
 	socket.on("disconnect", () => {
 		console.log("user disconnected");
 		delete userSocketMap[userId];
-		io.emit("getOnlineUsers", Object.keys(userSocketMap));
 	});
 });
